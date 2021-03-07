@@ -228,31 +228,6 @@ class LinkedList:
 
 
 
-"""
-Двусвязный список на основе односвязного списка.
-    Самостоятельное задание. В двусвязном списке должны быть следующие методы:
-    - **`__str__`**
-    - **`__repr__`**
-    - **`__getitem__`**
-    - **`__setitem__`**
-    - **`__len__`**
-    - **`insert`**
-    - **`index`**
-    - **`remove`**
-    - **`append`**
-    - **`__iter__`**
-    Необязательно все эти методы должны быть переопределены в явном виде. По максимуму используйте
-    наследование, если поведение списков в контексте реализации указанных метод схоже.
-    С точки зрения наследования по минимуму перегружайте методы. При необходимости рефакторите базовый класс,
-    чтобы локализовать части кода во вспомогательные функции, которые имеют различное поведение
-    в связном и двусвязном списках.
-    Стремитесь к минимизации кода в дочернем классе.
-    Есть какой-то метод класса DoubleLinkedList хотите отработать в явном виде ещё раз, не возбраняется.
-"""
-
-# ToDo импорт любой вашей реалиазации LinkedList
-
-
 class DoubleLinkedList(LinkedList):
     def __init__(self, node_type=DoubleNode):
         super().__init__(node_type)
@@ -296,57 +271,63 @@ class DoubleLinkedList(LinkedList):
         self._size += 1
 
 
-    def insert(self, data, index=0):      # код повторяется и вообще пока не всё ясно
+    def insert(self, data, index=0):
         if index < 0 or index > self._size:
             raise ValueError
 
         new_node = self._node_type(data)
-        self._size += 1
         if index == 0:
-            new_node.next_node = self.head
-            self.head = new_node
             old_node = self.head.next_node
+            self.head = new_node
+            new_node.next_node = self.head
             old_node.prev_node = new_node
+        elif index == self._size:
+            self.append(data)
+            return
         else:
-            if index < self._size/2:
-                for i, node in enumerate(self._node_iter()):
-                    if i == index - 1:
-                        old_node = new_node.next_node
-                        old_node.next_node = new_node
-                        new_node.prev_node = old_node
-            elif index >= self._size/2:
-                for i, node in enumerate(self._node_iter_rev()):
-                    if i == index - 1:
-                        old_node = new_node.next_node
-                        old_node.next_node = new_node
-                        new_node.prev_node = old_node
+            old_node = self._get_node_(index)
+            old_node_left = self._get_node_(index-1)
+            new_node.next_node = old_node
+            old_node.prev_node = new_node
+            new_node.prev_node = old_node_left
+            old_node_left.next_node = new_node
+        self._size += 1
+
 
 
     def clear(self):
-        self._size = 0
-        self.head = None
-        self.tail = None     # но это неточно
+        # self._size = 0
+        # self.head = None
+        super().clear()
+        self.tail = None
 
-    def index(self, data: Any):    # наверное такой же, как родительский метод?
+    def index(self, data: Any):  # наверное такой же, как родительский метод?
         for i, node in enumerate(self._node_iter()):
             if node.data == data:
                 return i
         raise ValueError
 
 
-"""Не успела :( """
-    # def delete(self, index: int):
-    #     if index < 0 or index >= self._size:
-    #         raise ValueError
-    #
-    #     self._size -= 1
-    #     if index == 0:
-    #         self.head = self.head.next_node
-    #     else:
-    #         for i, node in enumerate(self._node_iter()):
-    #             if i == index - 1:
-    #                 node.next_node = node.next_node.next_node
+    """Всё ещё непонятно, почему мы не можем удалять -1 элемент"""
 
+
+    def delete(self, index: int):
+        if index < 0 or index >= self._size:
+            raise ValueError
+
+        if index == 0:
+            self.head = self.head.next_node
+            self.head.prev_node = None
+        elif index == self._size - 1:
+            self.tail = self.tail.prev_node
+            self.tail.next_node = None
+
+        else:
+            new_node_l = self._get_node_(index-1)
+            new_node_r = self._get_node_(index + 1)
+            new_node_l.next_node = new_node_r
+            new_node_r.prev_node = new_node_l
+        self._size -= 1
 
 class LinkedListWithDriver(LinkedList):
     def __init__(self, driver: IStructureDriver):
