@@ -62,17 +62,6 @@ class PicleFileDriver(IStructureDriver):
         with open(self._filename, "wb") as file:
             pickle.dump(data, file)
 
-def main():
-    driver1: IStructureDriver = JsonFileDriver("/Users/evgeniakalinina/Desktop/smfile")
-    driver2: IStructureDriver = PicleFileDriver("/Users/evgeniakalinina/Desktop/smbin")
-    a = [2, 4, 6]
-    driver1.write(a)
-    print(driver1.read())
-    driver2.write(a)
-    print(driver2.read())
-
-if __name__ == '__main__':
-    main()
 
 
 
@@ -92,7 +81,6 @@ class Node:
     def next_node(self, value):
         if value is not None and not isinstance(value, Node):
             raise ValueError
-
         self._next_node = value
 
 
@@ -108,14 +96,19 @@ class DoubleNode(Node):
 
     @property
     def prev_node(self):
-        return self._prev_node()
+        if self._prev_node is not None:
+            return self._prev_node()
+        return None
 
     @prev_node.setter
     def prev_node(self, value):
-        if value is not None and not isinstance(value, Node):
+        if value is None:
+            self._prev_node = value
+        elif isinstance(value, Node):
+            self._prev_node = weakref.ref(value)
+        else:
             raise ValueError
 
-        self._prev_node = weakref.ref(value)
 
 
 # не используется
@@ -277,16 +270,16 @@ class DoubleLinkedList(LinkedList):
 
         new_node = self._node_type(data)
         if index == 0:
-            old_node = self.head.next_node
+            old_node = self.head
             self.head = new_node
-            new_node.next_node = self.head
+            new_node.next_node = old_node
             old_node.prev_node = new_node
         elif index == self._size:
             self.append(data)
             return
         else:
             old_node = self._get_node_(index)
-            old_node_left = self._get_node_(index-1)
+            old_node_left = old_node.prev_node
             new_node.next_node = old_node
             old_node.prev_node = new_node
             new_node.prev_node = old_node_left
@@ -301,7 +294,7 @@ class DoubleLinkedList(LinkedList):
         super().clear()
         self.tail = None
 
-    def index(self, data: Any):  # наверное такой же, как родительский метод?
+    def index(self, data: Any):  # пока родительский
         for i, node in enumerate(self._node_iter()):
             if node.data == data:
                 return i
@@ -314,6 +307,8 @@ class DoubleLinkedList(LinkedList):
     def delete(self, index: int):
         if index < 0 or index >= self._size:
             raise ValueError
+        if self._size == 1:
+            self.clear()
 
         if index == 0:
             self.head = self.head.next_node
@@ -323,16 +318,23 @@ class DoubleLinkedList(LinkedList):
             self.tail.next_node = None
 
         else:
-            new_node_l = self._get_node_(index-1)
-            new_node_r = self._get_node_(index + 1)
+            old_node = self._get_node_(index)
+            new_node_l = old_node.prev_node
+            new_node_r = old_node.next_node
             new_node_l.next_node = new_node_r
             new_node_r.prev_node = new_node_l
         self._size -= 1
 
 class LinkedListWithDriver(LinkedList):
-    def __init__(self, driver: IStructureDriver):
+    def __init__(self, driver: IStructureDriver = None):
         self._driver = driver
         super().__init__()
+
+    @property
+    def driver(self) -> IStructureDriver:
+        if self._driver is None:
+            return DriverFabric.get_driver()   # в этом не совсем уверена
+
 
     def read(self):
         self.clear()
@@ -345,6 +347,15 @@ class LinkedListWithDriver(LinkedList):
 
 
 def main():
+
+    # driver1: IStructureDriver = JsonFileDriver("/Users/evgeniakalinina/Desktop/smfile")
+    # driver2: IStructureDriver = PicleFileDriver("/Users/evgeniakalinina/Desktop/smbin")
+    # a = [2, 4, 6]
+    # driver1.write(a)
+    # print(driver1.read())
+    # driver2.write(a)
+    # print(driver2.read())
+
     driver = PicleFileDriver("some.bin")
     ll = LinkedListWithDriver(driver)
     ll.append("a")

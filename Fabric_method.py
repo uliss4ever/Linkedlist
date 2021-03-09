@@ -15,7 +15,6 @@ class DriverBuilder(ABC):
     def build(self):
         ...
 
-
 class JsonFileBuilder(DriverBuilder):
     DEFAULT_NAME = 'untitled.json'
 
