@@ -12,6 +12,8 @@ import json
 import pickle
 import sys
 import weakref
+
+
 class IStructureDriver(ABC):
 
 
@@ -332,9 +334,16 @@ class LinkedListWithDriver(LinkedList):
 
     @property
     def driver(self) -> IStructureDriver:
-        if self._driver is None:
-            return DriverFabric.get_driver()   # в этом не совсем уверена
+        return self._driver
 
+    @driver.setter
+    def driver(self, value):
+        if value is None:
+            self._driver = DriverFabric.get_driver()
+        elif isinstance(value, IStructureDriver):
+            self._driver = value
+        else:
+            raise ValueError
 
     def read(self):
         self.clear()
