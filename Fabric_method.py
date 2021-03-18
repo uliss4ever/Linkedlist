@@ -7,13 +7,61 @@
 """
 
 from abc import ABC, abstractmethod
+from typing import Sequence
+import json
+import pickle
 
-from Patterns import IStructureDriver, JsonFileDriver, PicleFileDriver
 
 class DriverBuilder(ABC):
     @abstractmethod
     def build(self):
         ...
+
+
+class IStructureDriver(ABC):
+
+    @abstractmethod
+    def read(self) -> Sequence:
+        """
+        Считывает информацию из драйвера и возвращает её для объекта, использующего этот драйвер
+        :return Последовательность элементов, считанная драйвером, для объекта
+        """
+        pass
+
+    @abstractmethod
+    def write(self, data: Sequence) -> None:
+        """
+        Получает информацию из объекта, использующего этот драйвер, и записывает её в драйвер
+        :param data Последовательность элементов, полученная от объекта, для записи драйвером
+        """
+        pass
+
+
+class JsonFileDriver(IStructureDriver):
+    def __init__(self, filename: str):
+        self._filename = filename
+
+    def read(self) -> Sequence:
+        with open(self._filename) as file:
+            return json.load(file)
+
+    def write(self, data: Sequence) -> None:
+        with open(self._filename, "w") as file:
+            json.dump(data, file)
+
+
+class PicleFileDriver(IStructureDriver):
+    def __init__(self, filename: str):
+        self._filename = filename
+
+    def read(self) -> Sequence:
+        with open(self._filename, "rb") as file:
+            return pickle.load(file)
+
+    def write(self, data: Sequence) -> None:
+        with open(self._filename, "wb") as file:
+            pickle.dump(data, file)
+
 
 class JsonFileBuilder(DriverBuilder):
     DEFAULT_NAME = 'untitled.json'
@@ -46,9 +94,8 @@ class DriverFabric:
         'json_file': JsonFileBuilder, 'picle_file': PicleFileBuilder
     }
     DEFAULT_DRIVER = 'json_file'
+
     # DEFAULT_DRIVER = 'picle_file'
-
-
 
     @classmethod
     def get_driver(cls):
@@ -62,5 +109,3 @@ class DriverFabric:
 if __name__ == '__main__':
     driver = DriverFabric.get_driver()
     print(driver.read())
-
-

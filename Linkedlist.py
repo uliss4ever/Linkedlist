@@ -1,69 +1,19 @@
 from typing import Any, Optional
 
+from Fabric_method import DriverFabric, IStructureDriver, JsonFileDriver, PicleFileDriver
+
 """
     1. Реализовать класс JsonFileDriver, который будет описывать логику считывания (записи) элементов из (в) json файл.
     2. Реализовать класс SimpleFileDriver, который будет описывать логику считывания (записи) элементов из (в) файл.
     3. В блоке __main__ протестировать работу драйверов
 """
 
-from typing import Sequence
+# from typing import Sequence
 from abc import ABC, abstractmethod
-import json
-import pickle
-import sys
+# import json
+# import pickle
+# import sys
 import weakref
-
-
-class IStructureDriver(ABC):
-
-
-    @abstractmethod
-    def read(self) -> Sequence:
-        """
-        Считывает информацию из драйвера и возвращает её для объекта, использующего этот драйвер
-        :return Последовательность элементов, считанная драйвером, для объекта
-        """
-        pass
-
-    @abstractmethod
-    def write(self, data: Sequence) -> None:
-        """
-        Получает информацию из объекта, использующего этот драйвер, и записывает её в драйвер
-        :param data Последовательность элементов, полученная от объекта, для записи драйвером
-        """
-        pass
-
-
-class JsonFileDriver(IStructureDriver):
-    def __init__(self, filename: str):
-        self._filename = filename
-
-
-    def read(self) -> Sequence:
-        with open(self._filename) as file:
-            return json.load(file)
-
-
-    def write(self, data: Sequence) -> None:
-        with open(self._filename, "w") as file:
-            json.dump(data, file)
-
-
-
-class PicleFileDriver(IStructureDriver):
-    def __init__(self, filename: str):
-        self._filename = filename
-
-
-    def read(self) -> Sequence:
-        with open(self._filename, "rb") as file:
-            return pickle.load(file)
-
-
-    def write(self, data: Sequence) -> None:
-        with open(self._filename, "wb") as file:
-            pickle.dump(data, file)
-
 
 
 
@@ -112,7 +62,6 @@ class DoubleNode(Node):
             raise ValueError
 
 
-
 # не используется
 class LinkedListIterator:
     def __init__(self, head):
@@ -136,12 +85,12 @@ class LinkedList:
         self._size = 0
         self._node_type = node_type
 
-
     def __str__(self):
         return "->".join(str(node) for node in self._node_iter())
 
     def __len__(self):
         return self._size
+
     def _get_node_(self, item):
         if not isinstance(item, int):  # item - индекс
             raise TypeError
@@ -222,7 +171,6 @@ class LinkedList:
                     node.next_node = node.next_node.next_node
 
 
-
 class DoubleLinkedList(LinkedList):
     def __init__(self, node_type=DoubleNode):
         super().__init__(node_type)
@@ -231,13 +179,11 @@ class DoubleLinkedList(LinkedList):
     def __str__(self):
         return "<->".join(str(node) for node in self._node_iter())
 
-
-    def _node_iter_rev(self):     # перебираем ноды в обратном порядке
+    def _node_iter_rev(self):  # перебираем ноды в обратном порядке
         current_node = self.tail
         while current_node is not None:
             yield current_node
             current_node = current_node.prev_node
-
 
     def _get_node_(self, item):
         if not isinstance(item, int):  # item - индекс
@@ -245,13 +191,12 @@ class DoubleLinkedList(LinkedList):
 
         if item >= len(self) or item < 0:
             raise IndexError
-        if item < self._size/2:
+        if item < self._size / 2:
             return super()._get_node_(item)
 
         for i, node in enumerate(self._node_iter_rev()):
-            if i == self._size - 1 -item:
+            if i == self._size - 1 - item:
                 return node
-
 
     def append(self, data: Any):
         new_node = self._node_type(data)
@@ -265,30 +210,32 @@ class DoubleLinkedList(LinkedList):
             new_node.prev_node = old_node
         self._size += 1
 
-
     def insert(self, data, index=0):
         if index < 0 or index > self._size:
             raise ValueError
-
         new_node = self._node_type(data)
-        if index == 0:
-            old_node = self.head
+
+        if self._size == 0:  # узлов не было совсем
             self.head = new_node
-            new_node.next_node = old_node
-            old_node.prev_node = new_node
-        elif index == self._size:
-            self.append(data)
-            return
+            self.tail = new_node
         else:
-            old_node = self._get_node_(index)
-            old_node_left = old_node.prev_node
-            new_node.next_node = old_node
-            old_node.prev_node = new_node
-            new_node.prev_node = old_node_left
-            old_node_left.next_node = new_node
-        self._size += 1
 
-
+            if index == 0:
+                old_node = self.head
+                self.head = new_node
+                new_node.next_node = old_node
+                old_node.prev_node = new_node
+            elif index == self._size:
+                self.append(data)
+                return
+            else:
+                old_node = self._get_node_(index)
+                old_node_left = old_node.prev_node
+                new_node.next_node = old_node
+                old_node.prev_node = new_node
+                new_node.prev_node = old_node_left
+                old_node_left.next_node = new_node
+            self._size += 1           # запуталась где должно это быть (возможно на 1 отступ раньше)
 
     def clear(self):
         # self._size = 0
@@ -302,9 +249,7 @@ class DoubleLinkedList(LinkedList):
                 return i
         raise ValueError
 
-
     """Всё ещё непонятно, почему мы не можем удалять -1 элемент"""
-
 
     def delete(self, index: int):
         if index < 0 or index >= self._size:
@@ -326,6 +271,7 @@ class DoubleLinkedList(LinkedList):
             new_node_l.next_node = new_node_r
             new_node_r.prev_node = new_node_l
         self._size -= 1
+
 
 class LinkedListWithDriver(LinkedList):
     def __init__(self, driver: IStructureDriver = None):
@@ -356,7 +302,6 @@ class LinkedListWithDriver(LinkedList):
 
 
 def main():
-
     # driver1: IStructureDriver = JsonFileDriver("/Users/evgeniakalinina/Desktop/smfile")
     # driver2: IStructureDriver = PicleFileDriver("/Users/evgeniakalinina/Desktop/smbin")
     # a = [2, 4, 6]
@@ -382,6 +327,7 @@ def main():
     # ll.insert("6", 2)
     # ll.insert("6", 0)
     # print(ll)
+
 
 if __name__ == "__main__":
     main()
